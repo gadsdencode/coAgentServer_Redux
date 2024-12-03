@@ -2,4 +2,3 @@ copilotkit
 uvicorn
 fastapi
 langgraph
-dotenv
