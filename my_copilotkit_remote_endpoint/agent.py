@@ -8,7 +8,7 @@ from langchain_core.messages import HumanMessage, AIMessage, FunctionMessage, To
 from langchain_core.utils.function_calling import convert_to_openai_tool
 import json
 import os
-from tools.weather import get_weather_async
+from my_copilotkit_remote_endpoint.tools.weather import get_weather_async
 import asyncio
 from functools import partial
 from config.endpoints import ENDPOINTS, Environment

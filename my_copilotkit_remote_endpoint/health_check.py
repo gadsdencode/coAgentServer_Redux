@@ -3,7 +3,7 @@
 import asyncio
 import os
 from langgraph_sdk import get_client
-from config.endpoints import ENDPOINTS, Environment
+from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
 from dotenv import load_dotenv
 
 # Load environment variables
