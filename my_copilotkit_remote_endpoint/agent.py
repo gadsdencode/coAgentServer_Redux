@@ -11,7 +11,7 @@ import os
 from my_copilotkit_remote_endpoint.tools.weather import get_weather_async
 import asyncio
 from functools import partial
-from config.endpoints import ENDPOINTS, Environment
+from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
 
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'PRODUCTION')
 
