@@ -4,11 +4,10 @@ from langchain.tools import StructuredTool
 import httpx
 from pydantic import BaseModel, Field
 import os
-from dotenv import load_dotenv
 import asyncio
 from functools import partial
 
-load_dotenv()
+API_KEY = os.getenv('OPENWEATHER_API_KEY')
 
 
 class WeatherInput(BaseModel):
@@ -23,7 +22,7 @@ async def get_weather_async(query: str) -> str:
     """
     Async implementation of weather retrieval.
     """
-    api_key = os.getenv("OPENWEATHER_API_KEY")
+    api_key = API_KEY
     if not api_key:
         raise ValueError("OpenWeatherMap API key is required")
 

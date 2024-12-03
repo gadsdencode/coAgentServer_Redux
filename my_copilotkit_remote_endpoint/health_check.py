@@ -4,15 +4,14 @@ import asyncio
 import os
 from langgraph_sdk import get_client
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
-from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'PRODUCTION')
 
 
 async def health_check():
     # Determine the environment; default to PRODUCTION if not specified
-    env = os.getenv('ENVIRONMENT', 'PRODUCTION').upper()
+    env = ENVIRONMENT.upper()
     if env not in Environment.__members__:
         raise ValueError(f"Invalid environment: {env}. Choose from {[e.name for e in Environment]}.")
 

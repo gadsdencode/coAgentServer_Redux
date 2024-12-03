@@ -12,13 +12,11 @@ from my_copilotkit_remote_endpoint.tools.weather import get_weather_async
 import asyncio
 from functools import partial
 from config.endpoints import ENDPOINTS, Environment
-from dotenv import load_dotenv
 
-# Load environment variables from .env file if it exists
-load_dotenv()
+API_KEY = os.getenv('ENVIRONMENT', 'PRODUCTION')
 
 # Select the environment; default to PRODUCTION
-env = os.getenv('ENVIRONMENT', 'PRODUCTION').upper()
+env = API_KEY.upper()
 if env not in Environment.__members__:
     raise ValueError(f"Invalid environment: {env}. Choose from {[e.name for e in Environment]}.")
 
