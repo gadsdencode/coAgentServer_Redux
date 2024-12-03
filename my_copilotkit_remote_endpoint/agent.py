@@ -13,10 +13,10 @@ import asyncio
 from functools import partial
 from config.endpoints import ENDPOINTS, Environment
 
-API_KEY = os.getenv('ENVIRONMENT', 'PRODUCTION')
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'PRODUCTION')
 
 # Select the environment; default to PRODUCTION
-env = API_KEY.upper()
+env = ENVIRONMENT.upper()
 if env not in Environment.__members__:
     raise ValueError(f"Invalid environment: {env}. Choose from {[e.name for e in Environment]}.")
 

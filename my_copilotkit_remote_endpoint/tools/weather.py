@@ -7,7 +7,7 @@ import os
 import asyncio
 from functools import partial
 
-API_KEY = os.getenv('OPENWEATHER_API_KEY')
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 
 
 class WeatherInput(BaseModel):
@@ -22,7 +22,7 @@ async def get_weather_async(query: str) -> str:
     """
     Async implementation of weather retrieval.
     """
-    api_key = API_KEY
+    api_key = OPENWEATHER_API_KEY
     if not api_key:
         raise ValueError("OpenWeatherMap API key is required")
 

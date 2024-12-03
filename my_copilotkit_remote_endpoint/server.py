@@ -11,7 +11,7 @@ from my_copilotkit_remote_endpoint.agent import graph_agent
 import json
 from fastapi.responses import JSONResponse
 
-API_KEY = os.getenv('ALLOWED_ORIGINS')
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS')
 
 app = FastAPI()
 
@@ -23,7 +23,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"message": f"An unexpected error occurred: {str(exc)}"}
     )
 
-allowed_origins = API_KEY.split(",") or ["*"]
+allowed_origins = ALLOWED_ORIGINS.split(",") or ["*"]
 if not allowed_origins or allowed_origins == [""]:
     allowed_origins = ["*"]  # Fallback to wildcard if env is empty
 

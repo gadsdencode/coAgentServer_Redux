@@ -5,12 +5,12 @@ import os
 from langgraph_sdk import get_client
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
 
-API_KEY = os.getenv('ENVIRONMENT', 'PRODUCTION')
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'PRODUCTION')
 
 
 async def setup_agent():
     # Determine the environment; default to PRODUCTION if not specified
-    env = API_KEY.upper()
+    env = ENVIRONMENT.upper()
     if env not in Environment.__members__:
         raise ValueError(f"Invalid environment: {env}. Choose from {[e.name for e in Environment]}.")
 

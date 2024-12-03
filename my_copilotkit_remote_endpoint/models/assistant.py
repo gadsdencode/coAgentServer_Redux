@@ -3,8 +3,10 @@
 from pydantic import BaseModel
 from typing import Dict, Any
 
+
 class AssistantConfig(BaseModel):
     configurable: Dict[str, Any]
+
 
 class Assistant(BaseModel):
     assistant_id: str
