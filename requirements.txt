@@ -1,0 +1,4 @@
+copilotkit
+uvicorn
+fastapi
+langgraph
