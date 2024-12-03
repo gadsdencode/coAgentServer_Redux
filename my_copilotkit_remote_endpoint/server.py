@@ -23,9 +23,13 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"message": f"An unexpected error occurred: {str(exc)}"}
     )
 
-allowed_origins = ALLOWED_ORIGINS.split(",") or ["*"]
-if not allowed_origins or allowed_origins == [""]:
-    allowed_origins = ["*"]  # Fallback to wildcard if env is empty
+# allowed_origins = ALLOWED_ORIGINS.split(",") or ["*"]
+
+if ALLOWED_ORIGINS:
+    allowed_origins = [origin.strip() for origin in ALLOWED_ORIGINS.split(",") if origin.strip()]
+else:
+    allowed_origins = ["*"]  # Fallback to wildcard if env is empty or not set
+
 
 # Configure CORS settings
 app.add_middleware(
