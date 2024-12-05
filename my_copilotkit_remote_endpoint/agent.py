@@ -1,17 +1,20 @@
 # agent.py
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Any
 from langgraph.graph import Graph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain_core.messages import HumanMessage, AIMessage, FunctionMessage, ToolMessage
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain_core.utils.function_calling import convert_to_openai_tool
 import json
 import os
 from my_copilotkit_remote_endpoint.tools.weather import get_weather_async
 import asyncio
-from functools import partial
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
+# from dotenv import load_dotenv, find_dotenv
+
+# Load environment variables from .env file
+# load_dotenv(find_dotenv())
 
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'PRODUCTION')
 
@@ -29,15 +32,16 @@ weather_tool_schema = convert_to_openai_tool(get_weather_async)
 # Initialize the model with tools
 model = ChatOpenAI(
     temperature=0,
-    model="gpt-4-1106-preview",
-    streaming=True
+    model="gpt-4",
+    streaming=False
 ).bind(tools=[weather_tool_schema])
 
 AGENT_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", """You are a helpful weather assistant that can provide accurate weather information.
-    Use the available get_weather tool to help answer user questions about the weather.
-    Always provide clear, concise responses and handle errors gracefully.
-    If the location is not found or there's an error, explain it clearly to the user."""),
+    ("system", """You are a world-class customer service assistant dedicated to providing exceptional support to users.
+Use the available get_weather tool to provide accurate weather information when requested.
+Always respond in a friendly, professional, and empathetic manner.
+Ensure clarity and conciseness in your responses, handle errors gracefully, and strive to resolve user inquiries effectively.
+If a user's location is not found or there's an error with the weather tool, explain the issue clearly and offer alternative assistance."""),
     ("human", "{input}"),
 ])
 
@@ -47,14 +51,25 @@ def should_continue(state: Dict) -> str:
     messages = state["messages"]
     last_message = messages[-1]
 
+    # Continue if the last message was a ToolMessage
+    #  (indicating the tool responded)
+    if isinstance(last_message, ToolMessage):
+        return "continue"
+
+    # Otherwise, check if the last message was an AIMessage with tool_calls
     if isinstance(last_message, AIMessage) and last_message.additional_kwargs.get("tool_calls"):
         return "continue"
+
     return "end"
 
 
 async def agent(state: Dict, config: Dict) -> Dict:
-    """Core agent logic with robust error handling and async support, now leveraging LangGraph config"""
-    messages = state["messages"]
+    """Core agent logic with robust error handling and async support."""
+    messages = state.get("messages", [])
+
+    # Prevent duplicate processing by checking the last message
+    if messages and isinstance(messages[-1], AIMessage):
+        return {"messages": messages}
 
     try:
         # Generate agent response using the configured model
@@ -63,27 +78,27 @@ async def agent(state: Dict, config: Dict) -> Dict:
         # Handle tool calling
         if tool_calls := response.additional_kwargs.get("tool_calls"):
             try:
+                # Iterate through tool calls
                 for tool_call in tool_calls:
-                    if tool_call["function"]["name"] == "get_weather":
+                    if tool_call["function"]["name"] == "get_weather_async":
                         # Parse tool arguments
                         tool_args = json.loads(tool_call["function"]["arguments"])
 
                         # Execute weather tool asynchronously
                         weather_result = await get_weather_async(tool_args.get("query"))
 
-                        # Add tool response to messages as ToolMessage
+                        # Append the AI message with tool_calls
                         messages.append(response)
+
+                        # Add tool response to messages as ToolMessage
                         messages.append(
                             ToolMessage(
-                                name="get_weather",
+                                name="get_weather_async",
                                 content=str(weather_result),
                                 tool_call_id=tool_call["id"]
                             )
                         )
-
-                # Generate final response after tool execution
-                final_response = await model.ainvoke(messages, config=config)
-                messages.append(final_response)
+                        break
 
             except json.JSONDecodeError:
                 messages.append(
@@ -94,8 +109,9 @@ async def agent(state: Dict, config: Dict) -> Dict:
                     AIMessage(content=f"Error executing weather tool: {str(e)}")
                 )
         else:
-            # Add regular response to messages
-            messages.append(response)
+            # Add regular response to messages only if it's not already there
+            if not messages or not isinstance(messages[-1], AIMessage):
+                messages.append(response)
 
     except asyncio.CancelledError:
         raise
