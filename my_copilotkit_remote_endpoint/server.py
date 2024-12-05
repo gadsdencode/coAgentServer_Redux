@@ -10,6 +10,10 @@ from fastapi.responses import StreamingResponse
 from my_copilotkit_remote_endpoint.agent import graph_agent
 import json
 from fastapi.responses import JSONResponse
+# from dotenv import load_dotenv, find_dotenv
+
+# Load environment variables from .env file
+#load_dotenv(find_dotenv())
 
 ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS')
 
@@ -74,7 +78,7 @@ add_fastapi_endpoint(app, sdk, "/copilotkit_remote")
 
 def main():
     """Run the uvicorn server."""
-    uvicorn.run("server:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
 
 
 if __name__ == "__main__":
