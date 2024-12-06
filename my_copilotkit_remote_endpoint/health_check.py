@@ -10,7 +10,7 @@ from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environmen
 # load_dotenv(find_dotenv())
 
 # Load environment variables
-ENVIRONMENT = os.getenv('ENVIRONMENT', 'PRODUCTION')
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')
 
 
 async def health_check():

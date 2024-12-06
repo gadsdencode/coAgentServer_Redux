@@ -1,14 +1,10 @@
 # tools/weather.py
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from langchain.tools import StructuredTool
 import httpx
 from pydantic import BaseModel, Field
 import os
 import asyncio
-# from dotenv import load_dotenv, find_dotenv
-
-# Load environment variables from .env file
-# load_dotenv(find_dotenv())
 
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 
@@ -19,13 +15,18 @@ class WeatherInput(BaseModel):
         ...,
         description="Location query (city name, zip code, city name with state, or coordinates)"
     )
+    config: Optional[Dict] = Field(
+        default=None,
+        description="Configuration options including API keys and settings"
+    )
 
 
-async def get_weather_async(query: str) -> str:
+async def get_weather_async(query: str, config: Optional[Dict] = None) -> str:
     """
     Async implementation of weather retrieval.
     """
-    api_key = '0069c66bc6fbd13a2abc52d3dfa970e9'
+    config = config or {}
+    api_key = config.get('api_key') or OPENWEATHER_API_KEY
     if not api_key:
         raise ValueError("OpenWeatherMap API key is required")
 
@@ -65,11 +66,11 @@ async def get_weather_async(query: str) -> str:
         return f"Unexpected error: {str(e)}"
 
 
-def get_weather(query: str) -> str:
+def get_weather(query: str, config: Optional[Dict] = None) -> str:
     """
     Synchronous wrapper for the async weather function.
     """
-    return asyncio.run(get_weather_async(query))
+    return asyncio.run(get_weather_async(query, config))
 
 
 def format_weather_response(data: Dict[str, Any]) -> str:
@@ -94,7 +95,7 @@ def format_weather_response(data: Dict[str, Any]) -> str:
 
 # Create the tool using StructuredTool with the sync wrapper
 weather_tool = StructuredTool.from_function(
-    func=get_weather,  # Use the sync wrapper
+    func=get_weather,
     name="get_weather",
     description="Retrieve current weather information based on location name, postal code, coordinates, or IP address",
     args_schema=WeatherInput

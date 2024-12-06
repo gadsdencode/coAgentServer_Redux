@@ -1,18 +1,18 @@
-# agent.py
+# agent_nutrition.py
 from typing import Dict, Any, List, Union
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langgraph.prebuilt import ToolExecutor
 import json
 import os
-from my_copilotkit_remote_endpoint.tools.intelsearch import search_inteleos_async
 import asyncio
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
+from my_copilotkit_remote_endpoint.tools.nutrition import nutrition_tool
 from pydantic import BaseModel
 
+# Environment setup
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')
 env = ENVIRONMENT.upper()
 if env not in Environment.__members__:
@@ -20,28 +20,20 @@ if env not in Environment.__members__:
 selected_env = Environment[env]
 endpoints = ENDPOINTS[selected_env]
 
+# Convert nutrition tool to OpenAI format
+nutrition_tool_schema = convert_to_openai_tool(nutrition_tool.func)
 
-# Define state schema using Pydantic
-class AgentState(BaseModel):
-    messages: List[Union[HumanMessage, AIMessage, ToolMessage]]
-    config: Dict
-    context: Dict
-
-
-# Convert the intelsearch tool to OpenAI tool format
-intelsearch_tool_schema = convert_to_openai_tool(search_inteleos_async)
-
-# Initialize the model with tools
+# Initialize model with tools
 model = ChatOpenAI(
     temperature=0.6,
     model="gpt-4o-mini",
     streaming=False
-).bind(tools=[intelsearch_tool_schema])
+).bind(tools=[nutrition_tool_schema])
 
 AGENT_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", """You are a world-class Inteleos AI customer service assistant dedicated to providing exceptional support for Inteleos customers.
-Questions about Inteleos? Use the available intelsearch tool to search inteleos.org for information.
-Always respond with accurate Inteleos information in a friendly, professional, and empathetic manner."""),
+    ("system", """You are a world-class nutrition and fitness assistant dedicated to providing exceptional guidance.
+Use the available nutrition_tool to provide accurate nutritional information when requested.
+Always respond in a friendly, professional, and empathetic manner."""),
     ("human", "{input}")
 ])
 
@@ -62,7 +54,7 @@ def should_continue(state: Dict[str, Any]) -> str:
     return "end"
 
 
-async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
+async def process_nutrition(state: Dict, config: Dict, context: Dict) -> Dict:
     """Core agent logic with proper state management."""
     messages = state.get("messages", [])
 
@@ -85,15 +77,17 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
         if tool_calls := response.additional_kwargs.get("tool_calls"):
             try:
                 for tool_call in tool_calls:
-                    if tool_call["function"]["name"] == "intelsearch":
+                    if tool_call["function"]["name"] == "get_nutrition_info":
                         tool_args = json.loads(tool_call["function"]["arguments"])
-                        intelsearch_result = await search_inteleos_async(tool_args.get("query"))
-                        config = current_state["config"]
+                        nutrition_result = await nutrition_tool.func(
+                            tool_args.get("query"),
+                            config=current_state["config"]
+                        )
                         messages.append(response)
                         messages.append(
                             ToolMessage(
-                                name="intelsearch",
-                                content=str(intelsearch_result),
+                                name="get_nutrition_info",
+                                content=str(nutrition_result),
                                 tool_call_id=tool_call["id"]
                             )
                         )
@@ -104,7 +98,7 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
                 )
             except Exception as e:
                 messages.append(
-                    AIMessage(content=f"Error executing intelsearch tool: {str(e)}")
+                    AIMessage(content=f"Error executing nutrition tool: {str(e)}")
                 )
         else:
             if not messages or not isinstance(messages[-1], AIMessage):
@@ -123,12 +117,20 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
         "context": context
     }
 
+
+# Define state schema using Pydantic
+class AgentState(BaseModel):
+    messages: List[Union[HumanMessage, AIMessage, ToolMessage]]
+    config: Dict
+    context: Dict
+
+
 # Build the graph
 workflow = StateGraph(AgentState)
 
 # Add state management
-node_name = "questions_agent_node"
-workflow.add_node(node_name, process_questions)
+node_name = "nutrition_agent_node"
+workflow.add_node(node_name, process_nutrition)
 workflow.set_entry_point(node_name)
 workflow.add_conditional_edges(
     node_name,

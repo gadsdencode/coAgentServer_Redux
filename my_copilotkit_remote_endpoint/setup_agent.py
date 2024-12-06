@@ -3,13 +3,13 @@
 import asyncio
 import os
 from langgraph_sdk import get_client
-from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
+from config.endpoints import ENDPOINTS, Environment
 # from dotenv import load_dotenv, find_dotenv
 
 # Load environment variables from .env file
 # load_dotenv(find_dotenv())
 
-ENVIRONMENT = os.getenv('ENVIRONMENT', 'PRODUCTION')
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')
 
 
 async def setup_agent():
@@ -22,7 +22,7 @@ async def setup_agent():
     endpoints = ENDPOINTS[selected_env]
 
     # Construct the full BASE URL
-    base_url = endpoints['BASE']
+    base_url = endpoints['BASE_ASSISTANTS']
 
     # Initialize the client with the BASE URL
     client = get_client(url=base_url)
@@ -41,9 +41,12 @@ async def setup_agent():
     # Display config schema (for reference)
     print("Configuration Schema:", schemas["config_schema"])
 
-    # Create a configured assistant using OpenAI
+    # Generate a unique agent name
+    agent_name = f"agent_{len(assistants) + 1}"
+
+    # Create a configured assistant using OpenAI with the unique name
     openai_assistant = await client.assistants.create(
-        "agent",
+        agent_name,
         config={"configurable": {"model_name": "openai"}}
     )
 

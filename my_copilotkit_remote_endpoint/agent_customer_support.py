@@ -1,18 +1,18 @@
-# agent.py
+# agent_customer_service.py
 from typing import Dict, Any, List, Union
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langgraph.prebuilt import ToolExecutor
 import json
 import os
-from my_copilotkit_remote_endpoint.tools.intelsearch import search_inteleos_async
 import asyncio
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
+from my_copilotkit_remote_endpoint.tools.order_tracker import order_status_tool
 from pydantic import BaseModel
 
+# Environment setup with proper validation
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')
 env = ENVIRONMENT.upper()
 if env not in Environment.__members__:
@@ -28,26 +28,27 @@ class AgentState(BaseModel):
     context: Dict
 
 
-# Convert the intelsearch tool to OpenAI tool format
-intelsearch_tool_schema = convert_to_openai_tool(search_inteleos_async)
+# Convert order tracking tool to OpenAI format
+order_tool_schema = convert_to_openai_tool(order_status_tool.func)
 
-# Initialize the model with tools
+# Initialize model with tools and proper configuration
 model = ChatOpenAI(
     temperature=0.6,
     model="gpt-4o-mini",
     streaming=False
-).bind(tools=[intelsearch_tool_schema])
+).bind(tools=[order_tool_schema])
 
 AGENT_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", """You are a world-class Inteleos AI customer service assistant dedicated to providing exceptional support for Inteleos customers.
-Questions about Inteleos? Use the available intelsearch tool to search inteleos.org for information.
-Always respond with accurate Inteleos information in a friendly, professional, and empathetic manner."""),
+    ("system", """You are a world-class customer service assistant dedicated to providing exceptional support.
+Use the available order_status_tool to provide accurate order tracking information when requested.
+Always respond in a friendly, professional, and empathetic manner.
+If an order is not found or there's an error, explain the issue clearly and offer alternative assistance."""),
     ("human", "{input}")
 ])
 
 
 def should_continue(state: Dict[str, Any]) -> str:
-    """Determine if the agent should continue or finish"""
+    """Determine if the agent should continue processing"""
     if not state.get("messages"):
         return "end"
 
@@ -62,11 +63,11 @@ def should_continue(state: Dict[str, Any]) -> str:
     return "end"
 
 
-async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
-    """Core agent logic with proper state management."""
+async def process_customer_support(state: Dict, config: Dict, context: Dict) -> Dict:
+    """Core agent logic with comprehensive state management and error handling"""
     messages = state.get("messages", [])
 
-    # Create proper state context
+    # Initialize proper state context
     current_state = {
         "messages": messages,
         "config": config.get("copilotkit_config", {}),
@@ -77,6 +78,7 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
         return current_state
 
     try:
+        # Process with proper config context
         response = await model.ainvoke(
             messages,
             config=current_state["config"]
@@ -85,26 +87,28 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
         if tool_calls := response.additional_kwargs.get("tool_calls"):
             try:
                 for tool_call in tool_calls:
-                    if tool_call["function"]["name"] == "intelsearch":
+                    if tool_call["function"]["name"] == "get_order_status":
                         tool_args = json.loads(tool_call["function"]["arguments"])
-                        intelsearch_result = await search_inteleos_async(tool_args.get("query"))
-                        config = current_state["config"]
+                        order_result = await order_status_tool.func(
+                            tool_args.get("order_id"),
+                            config=current_state["config"]
+                        )
                         messages.append(response)
                         messages.append(
                             ToolMessage(
-                                name="intelsearch",
-                                content=str(intelsearch_result),
+                                name="get_order_status",
+                                content=str(order_result),
                                 tool_call_id=tool_call["id"]
                             )
                         )
                         break
             except json.JSONDecodeError:
                 messages.append(
-                    AIMessage(content="Error: Invalid tool arguments format")
+                    AIMessage(content="Error: Invalid order ID format provided")
                 )
             except Exception as e:
                 messages.append(
-                    AIMessage(content=f"Error executing intelsearch tool: {str(e)}")
+                    AIMessage(content=f"Error checking order status: {str(e)}")
                 )
         else:
             if not messages or not isinstance(messages[-1], AIMessage):
@@ -117,6 +121,7 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
             AIMessage(content=f"An unexpected error occurred: {str(e)}")
         )
 
+    # Return complete state with all context
     return {
         "messages": messages,
         "config": current_state["config"],
@@ -127,8 +132,8 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
 workflow = StateGraph(AgentState)
 
 # Add state management
-node_name = "questions_agent_node"
-workflow.add_node(node_name, process_questions)
+node_name = "customer_support_agent_node"
+workflow.add_node(node_name, process_customer_support)
 workflow.set_entry_point(node_name)
 workflow.add_conditional_edges(
     node_name,
