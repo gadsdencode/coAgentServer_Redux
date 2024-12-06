@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 # from dotenv import load_dotenv, find_dotenv
 
 # Load environment variables from .env file
-#load_dotenv(find_dotenv())
+# load_dotenv(find_dotenv())
 
 ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS')
 
