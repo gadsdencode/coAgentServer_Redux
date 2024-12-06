@@ -6,12 +6,19 @@ authors = ["gadsdencode <jordan.martens@osscontact.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.9.0,<3.13"
 copilotkit = "^0.1.27"
 fastapi = "^0.115.5"
 uvicorn = "^0.32.1"
-langgraph = "^0.2.53"
+langgraph = "^0.2.0"
+langchain = "*"
+langchain_core = "*"
+langchain_openai = "*"
+tavily-python = "^0.3.0"
+langchain_community = "*"
 requests = "^2.32.3"
+python-dotenv = "^1.0.1"
+pydantic = "^2.5.2"
 tavily-python = "^0.3.0"
 
 

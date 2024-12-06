@@ -1,8 +1,12 @@
 # agent.py
+from typing import Dict, Any
+from langgraph.graph import Graph, END
+from langgraph.checkpoint.memory import MemorySaver
 from typing import Dict, Any, List, Union
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.prebuilt import ToolExecutor
@@ -59,6 +63,7 @@ def should_continue(state: Dict[str, Any]) -> str:
     if isinstance(last_message, AIMessage) and last_message.additional_kwargs.get("tool_calls"):
         return "continue"
 
+
     return "end"
 
 
@@ -84,6 +89,7 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
 
         if tool_calls := response.additional_kwargs.get("tool_calls"):
             try:
+                # Iterate through tool calls
                 for tool_call in tool_calls:
                     if tool_call["function"]["name"] == "intelsearch":
                         tool_args = json.loads(tool_call["function"]["arguments"])

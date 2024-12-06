@@ -4,6 +4,10 @@ import asyncio
 import os
 from langgraph_sdk import get_client
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
+# from dotenv import load_dotenv, find_dotenv
+
+# Load environment variables from .env file
+# load_dotenv(find_dotenv())
 
 # Load environment variables
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'PRODUCTION')

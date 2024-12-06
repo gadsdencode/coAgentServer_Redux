@@ -16,7 +16,7 @@ ENDPOINTS = {
         'HEALTH': '/health',
     },
     Environment.PRODUCTION: {
-        'BASE': 'https://coagentserver-production.up.railway.app/copilotkit_remote',
+        'BASE': 'https://web-production-7cd0b.up.railway.app/copilotkit_remote',
         'ACTIONS': '/info',
         'STREAM': '/stream',
         'HEALTH': '/health',
