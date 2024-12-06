@@ -12,6 +12,7 @@ fastapi = "^0.115.5"
 uvicorn = "^0.32.1"
 langgraph = "^0.2.53"
 requests = "^2.32.3"
+tavily-python = "^0.3.0"
 
 
 [build-system]
