@@ -4,7 +4,7 @@ from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 import os
 import asyncio
-from tavily_python import TavilyClient
+from tavily import TavilyClient
 
 TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
 
