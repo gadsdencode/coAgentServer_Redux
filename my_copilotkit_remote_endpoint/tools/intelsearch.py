@@ -4,7 +4,7 @@ from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 import os
 import asyncio
-from tavily_python import TavilyClient
+from tavily import Client
 from my_copilotkit_remote_endpoint.utils.logger import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +37,7 @@ async def search_inteleos_async(query: str, config: Optional[Dict] = None) -> st
     if not api_key:
         raise ValueError("Tavily API key is required for IntelSearch")
 
-    client = TavilyClient(api_key=api_key)
+    client = Client(api_key=api_key)
     try:
         response = client.search(f"site:inteleos.org {query}")
         return format_inteleos_response(response, query)
