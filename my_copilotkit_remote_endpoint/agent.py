@@ -12,10 +12,14 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.prebuilt import ToolExecutor
 import json
 import os
-from my_copilotkit_remote_endpoint.tools.intelsearch import search_inteleos_async
+from tools.intelsearch import search_inteleos_async
 import asyncio
 from config.endpoints import ENDPOINTS, Environment
 from pydantic import BaseModel
+from utils.logger import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')
 env = ENVIRONMENT.upper()
@@ -23,6 +27,8 @@ if env not in Environment.__members__:
     raise ValueError(f"Invalid environment: {env}.")
 selected_env = Environment[env]
 endpoints = ENDPOINTS[selected_env]
+logger.info(f"Selected environment: {selected_env}")
+logger.info(f"Endpoints: {endpoints}")
 
 
 # Define state schema using Pydantic
@@ -34,13 +40,14 @@ class AgentState(BaseModel):
 
 # Convert the intelsearch tool to OpenAI tool format
 intelsearch_tool_schema = convert_to_openai_tool(search_inteleos_async)
-
+logger.info(f"Intelsearch tool schema: {intelsearch_tool_schema}")
 # Initialize the model with tools
 model = ChatOpenAI(
     temperature=0.6,
     model="gpt-4o-mini",
     streaming=False
-).bind(tools=[intelsearch_tool_schema])
+)
+logger.info("Model initialized successfully")
 
 AGENT_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """You are a world-class Inteleos AI customer service assistant dedicated to providing exceptional support for Inteleos customers.
@@ -48,6 +55,7 @@ Questions about Inteleos? Use the available intelsearch tool to search inteleos.
 Always respond with accurate Inteleos information in a friendly, professional, and empathetic manner."""),
     ("human", "{input}")
 ])
+logger.info(f"Agent prompt: {AGENT_PROMPT}")
 
 
 def should_continue(state: Dict[str, Any]) -> str:
@@ -56,14 +64,14 @@ def should_continue(state: Dict[str, Any]) -> str:
         return "end"
 
     last_message = state["messages"][-1]
-
+    logger.info(f"Last message: {last_message}")
     if isinstance(last_message, ToolMessage):
         return "continue"
 
     if isinstance(last_message, AIMessage) and last_message.additional_kwargs.get("tool_calls"):
         return "continue"
 
-
+    logger.info("Ending conversation")
     return "end"
 
 
@@ -128,10 +136,10 @@ async def process_questions(state: Dict, config: Dict, context: Dict) -> Dict:
         "config": current_state["config"],
         "context": context
     }
-
+logger.info("Processed questions")
 # Build the graph
 workflow = StateGraph(AgentState)
-
+logger.info("Graph built")
 # Add state management
 node_name = "questions_agent_node"
 workflow.add_node(node_name, process_questions)
@@ -144,6 +152,8 @@ workflow.add_conditional_edges(
         "end": END
     }
 )
-
+logger.info("Conditional edges added")
+logger.info("Workflow compiled")
 # Compile the workflow
 graph_agent = workflow.compile()
+logger.info("Graph agent compiled")
