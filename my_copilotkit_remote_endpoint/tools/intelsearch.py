@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 import os
 import asyncio
 from tavily import TavilyClient
-from utils.logger import logging
+from my_copilotkit_remote_endpoint.utils.logger import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

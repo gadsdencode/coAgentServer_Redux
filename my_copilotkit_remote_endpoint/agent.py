@@ -12,11 +12,11 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.prebuilt import ToolExecutor
 import json
 import os
-from tools.intelsearch import search_inteleos_async
+from my_copilotkit_remote_endpoint.tools.intelsearch import search_inteleos_async
 import asyncio
-from config.endpoints import ENDPOINTS, Environment
+from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
 from pydantic import BaseModel
-from utils.logger import logging
+from my_copilotkit_remote_endpoint.utils.logger import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
