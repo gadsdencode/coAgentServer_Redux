@@ -7,7 +7,7 @@ from copilotkit import CopilotKitSDK, LangGraphAgent
 import uvicorn
 import os
 from fastapi.responses import StreamingResponse
-from agent import graph_agent
+from my_copilotkit_remote_endpoint.agent import graph_agent
 import json
 from fastapi.responses import JSONResponse
 from utils.logger import logging
