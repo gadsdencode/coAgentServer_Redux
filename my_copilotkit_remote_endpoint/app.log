@@ -46,3 +46,5 @@
 2024-12-06 16:23:05,287 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
 2024-12-06 16:23:05,289 - copilotkit-server - INFO - LangSmith tracing middleware initialized
 2024-12-06 16:23:05,289 - copilotkit-server - INFO - LangSmith tracing middleware initialized
+2024-12-09 06:19:04,007 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
+2024-12-09 06:19:04,008 - copilotkit-server - INFO - Starting uvicorn server...

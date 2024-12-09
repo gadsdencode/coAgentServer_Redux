@@ -4,7 +4,7 @@ from copilotkit import CopilotKitSDK, LangGraphAgent
 from fastapi.responses import JSONResponse
 from langsmith import Client
 from datetime import datetime
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from typing import Callable, Optional
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
@@ -22,7 +22,7 @@ from my_copilotkit_remote_endpoint.agent_customer_support import graph_agent as 
 logger = setup_logger("copilotkit-server")
 
 # Load environment variables
-load_dotenv()
+# load_dotenv()
 
 # Environment variable validation
 LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")
@@ -115,7 +115,7 @@ class TracedCopilotKitSDK(CopilotKitSDK):
 sdk = TracedCopilotKitSDK(
     agents=[
         LangGraphAgent(
-            name="questions_agent",
+            name="inteleos_agent",
             description="Agent that answers questions about Inteleos",
             graph=graph_agent
         ),
@@ -232,14 +232,14 @@ async def get_copilotkit_info():
     return JSONResponse(content={
         "actions": [
             {
-                "name": "weather_agent",
-                "description": "Get weather information",
+                "name": "inteleos_agent",
+                "description": "Get information about Inteleos.org",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "Location to get weather for"
+                            "description": "Question about Inteleos.org"
                         }
                     }
                 }
@@ -294,7 +294,7 @@ add_traced_fastapi_endpoint(app, sdk, "/copilotkit_remote")
 def main():
     """Run the uvicorn server."""
     logger.info("Starting uvicorn server...")
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=8080, reload=True)
 
 
 if __name__ == "__main__":
