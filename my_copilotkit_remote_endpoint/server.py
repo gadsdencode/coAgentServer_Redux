@@ -280,6 +280,7 @@ async def root():
     logger.info("Root endpoint called")
     return JSONResponse(content={"status": "ok", "service": "copilotkit-server"})
 
+
 @app.post("/copilotkit_remote/info")
 async def post_copilotkit_info(request: Request):
     data = await request.json()
