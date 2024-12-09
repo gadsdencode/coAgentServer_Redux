@@ -74,8 +74,8 @@ async def fetch_name_for_user_id(userId: str):
 sdk = CopilotKitSDK(
     agents=[
         LangGraphAgent(
-            name="weather_agent",
-            description="Agent that answers questions about the weather",
+            name="inteleos_agent",
+            description="Agent that uses the intelsearch tool to answer questions about Inteleos.org",
             agent=graph_agent
         )
     ]

@@ -141,7 +141,7 @@ logger.info("Processed questions")
 workflow = StateGraph(AgentState)
 logger.info("Graph built")
 # Add state management
-node_name = "questions_agent_node"
+node_name = "inteleos_agent_node"
 workflow.add_node(node_name, process_questions)
 workflow.set_entry_point(node_name)
 workflow.add_conditional_edges(
