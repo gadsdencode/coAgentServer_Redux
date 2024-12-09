@@ -2,3 +2,4 @@ copilotkit
 uvicorn
 fastapi
 langgraph
+tavily-python
