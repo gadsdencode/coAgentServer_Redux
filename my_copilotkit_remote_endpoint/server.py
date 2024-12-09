@@ -88,11 +88,11 @@ logger.info("CopilotKit endpoint added to FastAPI app")
 
 def main():
     """Run the uvicorn server."""
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=8080, reload=True)
 
 
 logger.info("Uvicorn server started")
 
 if __name__ == "__main__":
     main()
-logger.info("Server is running on port 8000")
+logger.info("Server is running on port 8080")
