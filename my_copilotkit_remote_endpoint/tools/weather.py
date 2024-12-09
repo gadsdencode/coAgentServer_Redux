@@ -5,10 +5,10 @@ import httpx
 from pydantic import BaseModel, Field
 import os
 import asyncio
-from dotenv import load_dotenv, find_dotenv
+# from dotenv import load_dotenv, find_dotenv
 
 
-load_dotenv(find_dotenv())
+# load_dotenv(find_dotenv())
 
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 

@@ -11,10 +11,10 @@ from my_copilotkit_remote_endpoint.agent import graph_agent
 import json
 from fastapi.responses import JSONResponse
 from my_copilotkit_remote_endpoint.utils.logger import logging
-from dotenv import load_dotenv, find_dotenv
+# from dotenv import load_dotenv, find_dotenv
 
 # Load environment variables from .env file
-load_dotenv(find_dotenv())
+# load_dotenv(find_dotenv())
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
