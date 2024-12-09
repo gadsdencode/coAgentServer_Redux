@@ -20,8 +20,8 @@ ENDPOINTS = {
         'ROOT': '/'       # Add root endpoint
     },
     Environment.PRODUCTION: {
-        'BASE': 'https://web-production-7cd0b.up.railway.app/copilotkit_remote',
-        'BASE_ASSISTANTS': 'https://web-production-7cd0b.up.railway.app',
+        'BASE': 'https://web-dev-461a.up.railway.app/copilotkit_remote',
+        'BASE_ASSISTANTS': 'https://web-dev-461a.up.railway.app',
         'ASSISTANTS': '/copilotkit_remote/assistants/search',
         'ACTIONS': '/copilotkit_remote/info',
         'STREAM': '/copilotkit_remote',
