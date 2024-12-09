@@ -4,7 +4,7 @@ from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 import os
 import asyncio
-from tavily_python import TavilyClient
+from tavily import TavilyClient
 from my_copilotkit_remote_endpoint.utils.logger import logging
 
 logging.basicConfig(level=logging.INFO)
