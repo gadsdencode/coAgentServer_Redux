@@ -62,16 +62,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 class LangSmithTracingMiddleware(BaseHTTPMiddleware):
-    def __init__(
-        self,
-        app: ASGIApp,
-        project_name: str = "pr-internal-kayak-74",
-        exclude_paths: set[str] = {"/health", "/metrics"}
-    ):
+    def __init__(self, app: ASGIApp, project_name: str, exclude_paths: list[str] = None):
         super().__init__(app)
         self.project_name = project_name
-        self.exclude_paths = exclude_paths
-        logger.info("LangSmith tracing middleware initialized")
+        self.exclude_paths = exclude_paths or ["/test", "/", "/copilotkit_remote/info"]
 
     async def dispatch(self, request: Request, call_next: Callable):
         if request.url.path in self.exclude_paths:
@@ -80,21 +74,20 @@ class LangSmithTracingMiddleware(BaseHTTPMiddleware):
         trace_id = f"copilotkit_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{id(request)}"
         logger.info(f"Starting trace for request: {trace_id}")
 
-        with langsmith_client.trace(
-            run_name=trace_id,
-            project_name=self.project_name,
-            tags=["copilotkit", request.method.lower()],
-        ) as trace:
-            request.state.langsmith_trace = trace
-            request.state.trace_id = trace_id
+        # Replace the trace context manager with run_and_trace
+        try:
+            response = await langsmith_client.run_and_trace(
+                project_name=self.project_name,
+                name=trace_id,
+                tags=["copilotkit", request.method.lower()],
+                run_type="chain",
+            )(call_next)(request)
 
-            response = await call_next(request)
-
-            trace.add_metadata({
-                "status_code": response.status_code,
-                "response_time": datetime.now().isoformat()
-            })
             return response
+        except Exception as e:
+            logger.error(f"Tracing error: {str(e)}")
+            # Fallback to normal request processing if tracing fails
+            return await call_next(request)
 
 
 class TracedCopilotKitSDK(CopilotKitSDK):
