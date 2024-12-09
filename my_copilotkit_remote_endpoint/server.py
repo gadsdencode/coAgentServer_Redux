@@ -280,6 +280,14 @@ async def root():
     logger.info("Root endpoint called")
     return JSONResponse(content={"status": "ok", "service": "copilotkit-server"})
 
+@app.post("/copilotkit_remote/info")
+async def post_copilotkit_info(request: Request):
+    data = await request.json()
+    logger.info(f"Received POST request: {data}")
+    # Process data and return a response
+    return JSONResponse(content={"status": "POST accepted"})
+
+
 # Add the traced endpoint
 add_traced_fastapi_endpoint(app, sdk, "/copilotkit_remote")
 
