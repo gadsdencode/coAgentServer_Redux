@@ -18,7 +18,7 @@ import traceback
 # Import agents with corrected import for customer_support_graph_agent
 from my_copilotkit_remote_endpoint.agent import graph_agent
 from my_copilotkit_remote_endpoint.agent_nutrition import graph_agent as nutrition_graph_agent
-from my_copilotkit_remote_endpoint.agent_customer_support import graph_agent as customer_support_graph_agent
+from my_copilotkit_remote_endpoint.agent_customer_support import graph_agent as customer_support_graph_agent  # Corrected import
 
 logger = setup_logger("copilotkit-server")
 
@@ -92,11 +92,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 class CopilotKitServerSDK(CopilotKitSDK):
-    # Remove the underscore - it should be just 'process_request'
-    async def process_request(self, request: dict) -> dict:
+    async def _process_request(self, request: dict) -> dict:
         try:
-            # Process the request directly
-            return await super()._process_request(request)
+            response = await super()._process_request(request)
+            return response
         except Exception as e:
             logger.error(f"Error processing request: {str(e)}", exc_info=True)
             return {
