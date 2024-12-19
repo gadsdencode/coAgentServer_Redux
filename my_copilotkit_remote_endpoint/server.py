@@ -18,7 +18,7 @@ import traceback
 # Import agents with corrected import for customer_support_graph_agent
 from my_copilotkit_remote_endpoint.agent import graph_agent
 from my_copilotkit_remote_endpoint.agent_nutrition import graph_agent as nutrition_graph_agent
-from my_copilotkit_remote_endpoint.agent_customer_support import customer_support_graph_agent  # Corrected import
+from my_copilotkit_remote_endpoint.agent_customer_support import graph_agent as customer_support_graph_agent
 
 logger = setup_logger("copilotkit-server")
 
