@@ -53,3 +53,10 @@
 2024-12-09 06:40:59,612 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
 2024-12-09 06:40:59,633 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
 2024-12-09 06:40:59,633 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
+2024-12-19 06:18:16,268 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
+2024-12-19 06:18:16,268 - copilotkit-server - INFO - Starting uvicorn server...
+2024-12-19 06:23:47,893 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
+2024-12-19 06:23:47,894 - copilotkit-server - INFO - Starting uvicorn server...
+2024-12-19 06:23:51,021 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
+2024-12-19 06:23:51,049 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote
+2024-12-19 06:23:51,049 - copilotkit-server - INFO - Adding traced FastAPI endpoint at path: /copilotkit_remote

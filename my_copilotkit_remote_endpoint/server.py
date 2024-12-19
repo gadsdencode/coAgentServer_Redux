@@ -25,7 +25,7 @@ logger = setup_logger("copilotkit-server")
 # load_dotenv()
 
 # Environment variable validation
-LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")
+LANGSMITH_API_KEY = "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"
 if not LANGSMITH_API_KEY:
     raise ValueError("LANGSMITH_API_KEY environment variable is not set")
 
@@ -41,6 +41,19 @@ os.environ["LANGCHAIN_PROJECT"] = "pr-internal-kayak-74"
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "https://web-dev-461a.up.railway.app",
+        "https://www.web-dev-461a.up.railway.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
@@ -216,6 +229,55 @@ async def search_assistants(request: Request):
             status_code=500,
             content={"error": f"Internal server error: {str(e)}"}
         )
+
+
+@app.get("/copilotkit_remote")
+async def get_copilotkit_remote():
+    """Endpoint for CopilotKit to fetch available actions"""
+    logger.info("Remote endpoint GET called")
+    return JSONResponse(content={
+        "actions": [
+            {
+                "name": "inteleos_agent",
+                "description": "Get information about Inteleos.org",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Question about Inteleos.org"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "nutrition_agent",
+                "description": "Get nutrition information",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Food item or nutrition query"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "customer_support_agent",
+                "description": "Get customer support",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Customer support query"
+                        }
+                    }
+                }
+            }
+        ]
+    })
 
 
 @app.get("/copilotkit_remote/info")
