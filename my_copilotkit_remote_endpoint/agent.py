@@ -12,7 +12,7 @@ from my_copilotkit_remote_endpoint.tools.intelsearch import search_inteleos_asyn
 import asyncio
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
 from pydantic import BaseModel
-from langgraph.checkpoint import InMemoryCheckpointer
+from langgraph.checkpoint import SimpleDictCheckpointer
 
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')
 env = ENVIRONMENT.upper()
@@ -140,5 +140,5 @@ workflow.add_conditional_edges(
     }
 )
 
-# Compile the workflow with an in-memory checkpointer
-graph_agent = workflow.compile(checkpointer=InMemoryCheckpointer())
+# Compile the workflow with a simple dict checkpointer
+graph_agent = workflow.compile(checkpointer={"type": "dict"})
