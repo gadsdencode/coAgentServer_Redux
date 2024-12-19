@@ -51,8 +51,10 @@ app.add_middleware(
         "https://www.web-dev-461a.up.railway.app"
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept", "Origin", "Authorization", "X-Requested-With"],
+    expose_headers=["Content-Type"],
+    max_age=3600
 )
 
 
@@ -138,19 +140,6 @@ sdk = TracedCopilotKitSDK(
     ]
 )
 
-# Configure CORS
-if ALLOWED_ORIGINS:
-    allowed_origins = [origin.strip() for origin in ALLOWED_ORIGINS.split(",") if origin.strip()]
-else:
-    allowed_origins = ["*"]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Add middleware
 app.add_middleware(RequestLoggingMiddleware)
