@@ -94,7 +94,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 class CopilotKitServerSDK(CopilotKitSDK):
     async def _process_request(self, request: dict) -> dict:
         try:
-            response = await super().handle_request(request)
+            response = await super().process_request(request)
             return response
         except Exception as e:
             logger.error(f"Error processing request: {str(e)}", exc_info=True)
