@@ -11,7 +11,6 @@ import asyncio
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
 from my_copilotkit_remote_endpoint.tools.order_tracker import order_status_tool
 from pydantic import BaseModel
-from langgraph.checkpoint import SimpleDictCheckpointer
 
 # Environment setup with proper validation
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')

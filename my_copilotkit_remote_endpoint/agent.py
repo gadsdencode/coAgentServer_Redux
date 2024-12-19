@@ -12,7 +12,6 @@ from my_copilotkit_remote_endpoint.tools.intelsearch import search_inteleos_asyn
 import asyncio
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
 from pydantic import BaseModel
-from langgraph.checkpoint import SimpleDictCheckpointer
 
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')
 env = ENVIRONMENT.upper()
