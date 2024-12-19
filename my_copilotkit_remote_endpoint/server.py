@@ -1,59 +1,41 @@
-# /my_copilotkit_remote_endpoint/route.py
-
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from copilotkit import CopilotKitSDK, LangGraphAgent
 from fastapi.responses import JSONResponse
 from datetime import datetime
-# from dotenv import load_dotenv
 from typing import Callable, Optional
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp
-import uvicorn
-import os
-import json
+from fastapi.middleware.base import BaseHTTPMiddleware
 from my_copilotkit_remote_endpoint.utils.logger import setup_logger
 import traceback
+import uvicorn
+import os
 
 # Import agents with corrected import for customer_support_graph_agent
 from my_copilotkit_remote_endpoint.agent import graph_agent
 from my_copilotkit_remote_endpoint.agent_nutrition import graph_agent as nutrition_graph_agent
-from my_copilotkit_remote_endpoint.agent_customer_support import graph_agent as customer_support_graph_agent  # Corrected import
+from my_copilotkit_remote_endpoint.agent_customer_support import graph_agent as customer_support_graph_agent
 
 logger = setup_logger("copilotkit-server")
-
-# Load environment variables
-# load_dotenv()
 
 # Environment variable validation
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS')
-
 # Initialize FastAPI app
 app = FastAPI()
 
-@app.middleware("http")
-async def add_cors_headers_on_error(request: Request, call_next):
-    try:
-        response = await call_next(request)
-        return response
-    except Exception as e:
-        # Create a JSON response with the error
-        error_response = JSONResponse(
-            status_code=500,
-            content={"detail": str(e)}
-        )
-        
-        # Manually add CORS headers to error response
-        error_response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
-        error_response.headers["Access-Control-Allow-Credentials"] = "true"
-        error_response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        error_response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept, Origin, Authorization, X-Requested-With"
-        
-        return error_response
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: Callable):
+        request_id = f"req_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{id(request)}"
+        logger.info(f"[{request_id}] Started {request.method} {request.url.path}")
+        try:
+            response = await call_next(request)
+            logger.info(f"[{request_id}] Completed {response.status_code} in {response.headers.get('X-Process-Time', '0.00')}s")
+            return response
+        except Exception as e:
+            logger.error(f"[{request_id}] Error processing request: {str(e)}\n{traceback.format_exc()}")
+            raise
 
 # Add CORS middleware
 app.add_middleware(
@@ -72,94 +54,33 @@ app.add_middleware(
     max_age=3600
 )
 
-
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        request_id = f"req_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{id(request)}"
-        logger.info(f"[{request_id}] Started {request.method} {request.url.path}")
-        start_time = datetime.now()
-
-        try:
-            response = await call_next(request)
-            process_time = (datetime.now() - start_time).total_seconds()
-            logger.info(f"[{request_id}] Completed {response.status_code} in {process_time:.2f}s")
-            return response
-        except Exception as e:
-            logger.error(f"[{request_id}] Failed {request.method} {request.url.path}\n"
-                        f"Error: {str(e)}\n"
-                        f"Traceback: {traceback.format_exc()}")
-            raise
-
-
-class CopilotKitServerSDK(CopilotKitSDK):
-    async def _process_request(self, request: dict) -> dict:
-        try:
-            response = await super()._process_request(request)
-            return response
-        except Exception as e:
-            logger.error(f"Error processing request: {str(e)}", exc_info=True)
-            return {
-                "success": False,
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
-            }
-
+# Add middleware
+app.add_middleware(RequestLoggingMiddleware)
 
 # Initialize the SDK with agents
-sdk = CopilotKitServerSDK(
+sdk = CopilotKitSDK(
     agents=[
         LangGraphAgent(
             name="inteleos_agent",
-            description="Agent that answers questions about Inteleos",
-            graph=graph_agent
+            description="Agent for handling Inteleos related queries",
+            agent=graph_agent
         ),
         LangGraphAgent(
             name="nutrition_agent",
-            description="Agent that provides nutrition and fitness guidance",
-            graph=nutrition_graph_agent
+            description="Agent for handling nutrition related queries",
+            agent=nutrition_graph_agent
         ),
         LangGraphAgent(
             name="customer_support_agent",
-            description="Agent that provides world-class customer support",
-            graph=customer_support_graph_agent
+            description="Agent for handling customer support queries",
+            agent=customer_support_graph_agent
         )
     ]
 )
 
-
-# Add middleware
-app.add_middleware(RequestLoggingMiddleware)
-
-# Dependency for getting current trace (removed as tracing is no longer used)
-# async def get_current_trace(request: Request):
-#     return getattr(request.state, "langsmith_trace", None)
-
-
-def add_fastapi_endpoint(app: FastAPI, sdk: CopilotKitServerSDK, path: str):
-    """Add CopilotKit endpoint without LangSmith tracing"""
-    logger.info(f"Adding FastAPI endpoint at path: {path}")
-
-    @app.post(path)
-    async def copilotkit_endpoint(request: Request):
-        request_id = f"copilot_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        try:
-            logger.info(f"[{request_id}] Processing request")
-            body = await request.json()
-            logger.debug(f"[{request_id}] Request body: {body}")
-            
-            response = await sdk._process_request(body)
-            logger.debug(f"[{request_id}] Response: {response}")
-            logger.info(f"[{request_id}] Request processed successfully")
-            return response
-        except Exception as e:
-            logger.error(f"[{request_id}] Error processing request: {str(e)}", exc_info=True)
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": str(e), "timestamp": datetime.utcnow().isoformat()}
-            )
-
-    return app
-
+# Add the CopilotKit endpoint to your FastAPI app
+from copilotkit.integrations.fastapi import add_fastapi_endpoint
+add_fastapi_endpoint(app, sdk, "/copilotkit_remote")
 
 @app.post("/copilotkit_remote/assistants/search")
 async def search_assistants(request: Request):
@@ -324,11 +245,6 @@ async def post_copilotkit_info(request: Request):
     logger.info(f"Received POST request: {data}")
     # Process data and return a response
     return JSONResponse(content={"status": "POST accepted"})
-
-
-# Add the endpoint without LangSmith tracing
-add_fastapi_endpoint(app, sdk, "/copilotkit_remote")
-
 
 def main():
     """Run the uvicorn server."""
