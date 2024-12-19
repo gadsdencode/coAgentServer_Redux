@@ -1,8 +1,9 @@
+# /my_copilotkit_remote_endpoint/route.py
+
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from copilotkit import CopilotKitSDK, LangGraphAgent
 from fastapi.responses import JSONResponse
-from langsmith import Client
 from datetime import datetime
 # from dotenv import load_dotenv
 from typing import Callable, Optional
@@ -14,10 +15,10 @@ import json
 from my_copilotkit_remote_endpoint.utils.logger import setup_logger
 import traceback
 
-# Import agents
+# Import agents with corrected import for customer_support_graph_agent
 from my_copilotkit_remote_endpoint.agent import graph_agent
 from my_copilotkit_remote_endpoint.agent_nutrition import graph_agent as nutrition_graph_agent
-from my_copilotkit_remote_endpoint.agent_customer_support import graph_agent as customer_support_graph_agent
+from my_copilotkit_remote_endpoint.agent_customer_support import customer_support_graph_agent  # Corrected import
 
 logger = setup_logger("copilotkit-server")
 
@@ -25,19 +26,11 @@ logger = setup_logger("copilotkit-server")
 # load_dotenv()
 
 # Environment variable validation
-LANGSMITH_API_KEY = "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"
-if not LANGSMITH_API_KEY:
-    raise ValueError("LANGSMITH_API_KEY environment variable is not set")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
 
 ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS')
-
-# Initialize LangSmith client
-langsmith_client = Client(api_key=LANGSMITH_API_KEY)
-
-# Configure LangSmith environment
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_PROJECT"] = "pr-internal-kayak-74"
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -98,51 +91,22 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             raise
 
 
-class LangSmithTracingMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: ASGIApp, project_name: str, exclude_paths: list[str] = None):
-        super().__init__(app)
-        self.project_name = project_name
-        self.exclude_paths = exclude_paths or ["/test", "/", "/copilotkit_remote/info"]
-
-    async def dispatch(self, request: Request, call_next: Callable):
-        if request.url.path in self.exclude_paths:
-            return await call_next(request)
-
-        trace_id = f"copilotkit_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{id(request)}"
-        logger.info(f"Starting trace for request: {trace_id}")
-
-        # Replace the trace context manager with run_and_trace
+class CopilotKitServerSDK(CopilotKitSDK):
+    async def _process_request(self, request: dict) -> dict:
         try:
-            response = await langsmith_client.run_and_trace(
-                project_name=self.project_name,
-                name=trace_id,
-                tags=["copilotkit", request.method.lower()],
-                run_type="chain",
-            )(call_next)(request)
-
+            response = await super().handle_request(request)
             return response
         except Exception as e:
-            logger.error(f"Tracing error: {str(e)}")
-            # Fallback to normal request processing if tracing fails
-            return await call_next(request)
-
-
-class TracedCopilotKitSDK(CopilotKitSDK):
-    async def _process_request(self, request: dict, trace: Optional[any] = None) -> dict:
-        try:
-            if trace:
-                with trace.branch(run_name="process_request"):
-                    response = await super().handle_request(request)
-                    return response
-            return await super().handle_request(request)
-        except Exception as e:
-            if trace:
-                trace.on_chain_error(e)
-            raise
+            logger.error(f"Error processing request: {str(e)}", exc_info=True)
+            return {
+                "success": False,
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
 
 
 # Initialize the SDK with agents
-sdk = TracedCopilotKitSDK(
+sdk = CopilotKitServerSDK(
     agents=[
         LangGraphAgent(
             name="inteleos_agent",
@@ -165,39 +129,34 @@ sdk = TracedCopilotKitSDK(
 
 # Add middleware
 app.add_middleware(RequestLoggingMiddleware)
-app.add_middleware(
-    LangSmithTracingMiddleware,
-    project_name=os.getenv("LANGCHAIN_PROJECT", "224a7_1_3")
-)
+
+# Dependency for getting current trace (removed as tracing is no longer used)
+# async def get_current_trace(request: Request):
+#     return getattr(request.state, "langsmith_trace", None)
 
 
-# Dependency for getting current trace
-async def get_current_trace(request: Request):
-    return getattr(request.state, "langsmith_trace", None)
-
-
-def add_traced_fastapi_endpoint(app: FastAPI, sdk: TracedCopilotKitSDK, path: str):
-    """Add CopilotKit endpoint with LangSmith tracing"""
-    logger.info(f"Adding traced FastAPI endpoint at path: {path}")
+def add_fastapi_endpoint(app: FastAPI, sdk: CopilotKitServerSDK, path: str):
+    """Add CopilotKit endpoint without LangSmith tracing"""
+    logger.info(f"Adding FastAPI endpoint at path: {path}")
 
     @app.post(path)
-    async def copilotkit_endpoint(
-        request: Request,
-        trace: Optional[any] = Depends(get_current_trace)
-    ):
+    async def copilotkit_endpoint(request: Request):
         request_id = f"copilot_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         try:
             logger.info(f"[{request_id}] Processing request")
             body = await request.json()
             logger.debug(f"[{request_id}] Request body: {body}")
             
-            response = await sdk._process_request(body, trace)
+            response = await sdk._process_request(body)
             logger.debug(f"[{request_id}] Response: {response}")
             logger.info(f"[{request_id}] Request processed successfully")
             return response
         except Exception as e:
             logger.error(f"[{request_id}] Error processing request: {str(e)}", exc_info=True)
-            raise
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": str(e), "timestamp": datetime.utcnow().isoformat()}
+            )
 
     return app
 
@@ -367,14 +326,14 @@ async def post_copilotkit_info(request: Request):
     return JSONResponse(content={"status": "POST accepted"})
 
 
-# Add the traced endpoint
-add_traced_fastapi_endpoint(app, sdk, "/copilotkit_remote")
+# Add the endpoint without LangSmith tracing
+add_fastapi_endpoint(app, sdk, "/copilotkit_remote")
 
 
 def main():
     """Run the uvicorn server."""
     logger.info("Starting uvicorn server...")
-    uvicorn.run("server:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("route:app", host="0.0.0.0", port=8080, reload=True)
 
 
 if __name__ == "__main__":
