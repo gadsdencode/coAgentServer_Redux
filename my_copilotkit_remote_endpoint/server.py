@@ -4,7 +4,7 @@ from copilotkit import CopilotKitSDK, LangGraphAgent
 from fastapi.responses import JSONResponse
 from datetime import datetime
 from typing import Callable, Optional
-from fastapi.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from my_copilotkit_remote_endpoint.utils.logger import setup_logger
 import traceback
 import uvicorn
