@@ -68,7 +68,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://web-dev-461a.up.railway.app",
-        "https://www.web-dev-461a.up.railway.app"
+        "https://www.web-dev-461a.up.railway.app",
+        "https://ai-customer-support-nine-eta.vercel.app",
+        "https://www.ai-customer-support-nine-eta.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
