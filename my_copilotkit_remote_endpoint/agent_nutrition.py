@@ -11,6 +11,7 @@ import asyncio
 from my_copilotkit_remote_endpoint.config.endpoints import ENDPOINTS, Environment
 from my_copilotkit_remote_endpoint.tools.nutrition import nutrition_tool
 from pydantic import BaseModel
+from langgraph.checkpoint import InMemoryCheckpointer
 
 # Environment setup
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'LOCAL')
@@ -141,5 +142,5 @@ workflow.add_conditional_edges(
     }
 )
 
-# Compile the workflow
-graph_agent = workflow.compile()
+# Compile the workflow with an in-memory checkpointer
+graph_agent = workflow.compile(checkpointer=InMemoryCheckpointer())
