@@ -92,11 +92,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 class CopilotKitServerSDK(CopilotKitSDK):
-    async def _process_request(self, request: dict) -> dict:
+    # Remove the underscore - it should be just 'process_request'
+    async def process_request(self, request: dict) -> dict:
         try:
-            # Changed from super().process_request to self.process_request
-            response = await self.process_request(request)
-            return response
+            # Process the request directly
+            return await super()._process_request(request)
         except Exception as e:
             logger.error(f"Error processing request: {str(e)}", exc_info=True)
             return {
@@ -334,7 +334,7 @@ add_fastapi_endpoint(app, sdk, "/copilotkit_remote")
 def main():
     """Run the uvicorn server."""
     logger.info("Starting uvicorn server...")
-    uvicorn.run("route:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=8080, reload=True)
 
 
 if __name__ == "__main__":
