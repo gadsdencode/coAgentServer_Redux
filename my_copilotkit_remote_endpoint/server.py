@@ -130,9 +130,9 @@ class TracedCopilotKitSDK(CopilotKitSDK):
         try:
             if trace:
                 with trace.branch(run_name="process_request"):
-                    response = await super()._process_request(request)
+                    response = await super().process_request(request)
                     return response
-            return await super()._process_request(request)
+            return await super().process_request(request)
         except Exception as e:
             if trace:
                 trace.on_chain_error(e)
