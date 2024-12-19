@@ -42,6 +42,26 @@ os.environ["LANGCHAIN_PROJECT"] = "pr-internal-kayak-74"
 # Initialize FastAPI app
 app = FastAPI()
 
+@app.middleware("http")
+async def add_cors_headers_on_error(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        # Create a JSON response with the error
+        error_response = JSONResponse(
+            status_code=500,
+            content={"detail": str(e)}
+        )
+        
+        # Manually add CORS headers to error response
+        error_response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+        error_response.headers["Access-Control-Allow-Credentials"] = "true"
+        error_response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        error_response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept, Origin, Authorization, X-Requested-With"
+        
+        return error_response
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -164,13 +184,18 @@ def add_traced_fastapi_endpoint(app: FastAPI, sdk: TracedCopilotKitSDK, path: st
         trace: Optional[any] = Depends(get_current_trace)
     ):
         request_id = f"copilot_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        logger.info(f"[{request_id}] Processing request")
-
-        body = await request.json()
-        response = await sdk._process_request(body, trace)
-        logger.info(f"[{request_id}] Request processed successfully")
-
-        return response
+        try:
+            logger.info(f"[{request_id}] Processing request")
+            body = await request.json()
+            logger.debug(f"[{request_id}] Request body: {body}")
+            
+            response = await sdk._process_request(body, trace)
+            logger.debug(f"[{request_id}] Response: {response}")
+            logger.info(f"[{request_id}] Request processed successfully")
+            return response
+        except Exception as e:
+            logger.error(f"[{request_id}] Error processing request: {str(e)}", exc_info=True)
+            raise
 
     return app
 
